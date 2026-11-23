@@ -5,6 +5,7 @@
 ## Author: Négoce
 ## Version: 1.2.0
 ## IconTexture: Interface\Icons\INV_Misc_Coin_01
+## X-Curse-Project-ID: 1826343
 ## SavedVariables: NegocePrix
 ## SavedVariablesPerCharacter: NegoceDB
 
