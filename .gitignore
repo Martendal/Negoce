@@ -2,8 +2,28 @@
 # (voir .pkgmeta). On ne les republie pas dans le dépôt.
 Libs/
 
-# Construction locale du packager
-.release/
+# Données de jeu : SavedVariables, sauvegardes, dossier WTF. Elles contiennent tes comptes,
+# personnages et finances, elles ne doivent jamais entrer dans le dépôt.
+WTF/
+SavedVariables/
+sauvegardes/
+*.lua.bak
+*.lua.old
 
+# Secrets
+.env
+.env.*
+*.pem
+*.key
+
+# Constructions et archives
+.release/
+*.zip
+
+# Fichiers d'éditeur et du système
 .DS_Store
+.vscode/
+.idea/
+*.swp
 __pycache__/
+*.log
