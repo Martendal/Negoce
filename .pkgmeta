@@ -10,4 +10,5 @@ externals:
 # Fichiers du dépôt qui ne vont pas dans l'addon publié.
 ignore:
   - outils
+  - media
   - README.md

@@ -1,3 +1,5 @@
+<p align="center"><img src="media/logo.png" alt="Négoce" width="200"></p>
+
 # Négoce
 
 Addon pour **WoW Forever** : ton entreprise dans le jeu. Patrimoine, portefeuille, prix de l'hôtel
