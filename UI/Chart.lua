@@ -2,6 +2,7 @@
 -- avec lecture des valeurs au survol.
 local ADDON, ns = ...
 local UI = ns.UI
+local L = ns.L
 
 local PAD_LEFT, PAD_RIGHT, PAD_TOP, PAD_BOTTOM = 8, 8, 10, 20
 local STEP = 5 -- largeur d'une colonne, en pixels
@@ -40,7 +41,7 @@ function UI.Chart(parent, w, h)
 
   local empty = UI.Text(f, 13, "muted", "CENTER")
   empty:SetPoint("CENTER", 0, 0)
-  empty:SetText("La courbe se dessine au fil de tes sessions.")
+  empty:SetText(L["La courbe se dessine au fil de tes sessions."])
 
   -- Lecture au survol
   local cursorLine = UI.Fill(f, "text", 0.25, "ARTWORK", 3)
@@ -144,9 +145,9 @@ function UI.Chart(parent, w, h)
       grid[i].label:SetText(ns.Money(lo + (hi - lo) * (i - 1) / 2))
     end
     local span = t1 - t0
-    local fmt = span > 86400 * 2 and "%d/%m" or "%d/%m %H:%M"
-    startLabel:SetText(date(fmt, t0))
-    endLabel:SetText(date(fmt, t1))
+    local withTime = span <= 86400 * 2
+    startLabel:SetText(ns.Date(t0, withTime))
+    endLabel:SetText(ns.Date(t1, withTime))
 
     self.samples, self.y, self.x = samples, y, x
   end
@@ -170,7 +171,7 @@ function UI.Chart(parent, w, h)
     dot:ClearAllPoints()
     dot:SetPoint("CENTER", self, "BOTTOMLEFT", px, py)
     dot:Show()
-    tip.date:SetText(date("%d/%m à %H:%M", s.t))
+    tip.date:SetText(date(L["%d/%m à %H:%M"], s.t))
     tip.main:SetText((self.labelA or "") .. "  " .. ns.Money(s.a))
     tip.second:SetText(s.b and ((self.labelB or "") .. "  " .. ns.Money(s.b)) or "")
     tip:ClearAllPoints()

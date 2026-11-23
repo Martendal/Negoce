@@ -4,14 +4,16 @@
 
 Addon pour **WoW Forever** : ton entreprise dans le jeu. Patrimoine, portefeuille, prix de l'hôtel
 des ventes, prix de revient et rentabilité des recettes de métier. Il observe et calcule, il
-n'achète ni ne vend jamais à ta place. Interface en français.
+n'achète ni ne vend jamais à ta place. Interface en français et en anglais.
 
 *An addon for WoW Forever that tracks your gold, auction house prices, cost price of your items
-and profitability of profession recipes. French interface only for now.*
+and profitability of profession recipes. English and French interface.*
 
 ## Utilisation
 
-- **Ouvrir** : bouton de la minicarte, ou `/negoce` (`/ng`).
+- **Ouvrir** : bouton de la minicarte, ou `/negoce` (`/ng`). `/negoce aide` liste les commandes.
+- **Langue** : celle du jeu (français sur un client français, anglais sinon). Pour la changer :
+  `/negoce langue en`, `/negoce langue fr`, ou `/negoce langue auto` pour revenir à celle du jeu.
 - **Prix de l'HV** : à l'hôtel des ventes, bouton « Négoce : scanner les prix ». Tes recherches
   mettent aussi les prix à jour.
 - **Finances** : patrimoine (or + stock) et sa courbe, portefeuille avec coût de revient moyen
@@ -26,7 +28,8 @@ and profitability of profession recipes. French interface only for now.*
 |---|---|
 | `Data/Recettes.lua` | table des recettes, générée par `outils/generer_donnees.py` (tables du client sur wago.tools, produit `wowf`) : à relancer après un patch |
 | `Art/` | textures, générées par `outils/generer_textures.py` |
-| `outils/test_hors_jeu.lua` | essai de la logique contre une fausse API : `lua outils/test_hors_jeu.lua` |
+| `Locales/` | textes : le français sert de clé (`L["Patrimoine"]`), `enUS.lua` donne l'anglais |
+| `outils/test_hors_jeu.lua` | essai de la logique contre une fausse API, en français puis en anglais : `lua outils/test_hors_jeu.lua`. Il échoue si un texte n'a pas sa traduction anglaise |
 | `.pkgmeta` | construction du .zip par le [packager de BigWigs](https://github.com/BigWigsMods/packager) |
 
 Les bibliothèques (`Libs/` : LibStub, CallbackHandler, LibDataBroker, LibDBIcon) ne sont pas

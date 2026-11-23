@@ -3,6 +3,7 @@
 -- chaîne de fabrication et affiche le détail de sa rentabilité.
 local ADDON, ns = ...
 local UI = ns.UI
+local L = ns.L
 
 local PAD = 20
 local DETAIL_W = 290
@@ -185,7 +186,7 @@ local function build(parent)
         f:Refresh()
       end }
     end
-    entry(0, "Tous mes métiers")
+    entry(0, L["Tous mes métiers"])
     local ids = {}
     for id in pairs(ns.DATA.metiers) do ids[#ids + 1] = id end
     table.sort(ids, function(a, b)
@@ -206,7 +207,7 @@ local function build(parent)
   arrow:SetPoint("RIGHT", -10, 0)
   arrow:SetVertexColor(UI.Color("muted"))
 
-  local knownButton = UI.Button(bar, "Mes recettes", 110, 28, function()
+  local knownButton = UI.Button(bar, L["Mes recettes"], 110, 28, function()
     ui.prodKnown = not ui.prodKnown
     selected = nil
     resetScroll = true
@@ -214,7 +215,7 @@ local function build(parent)
   end)
   knownButton:SetPoint("LEFT", skillButton, "RIGHT", 8, 0)
 
-  local profitButton = UI.Button(bar, "Rentables", 96, 28, function()
+  local profitButton = UI.Button(bar, L["Rentables"], 96, 28, function()
     ui.prodProfit = not ui.prodProfit
     selected = nil
     resetScroll = true
@@ -233,7 +234,7 @@ local function build(parent)
   searchBox:SetMaxLetters(40)
   searchBox.placeholder = UI.Text(searchBox, 12, "faint")
   searchBox.placeholder:SetPoint("LEFT", 12, 0)
-  searchBox.placeholder:SetText("Chercher un produit…")
+  searchBox.placeholder:SetText(L["Chercher un produit…"])
   searchBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
   searchBox:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
   searchBox:SetScript("OnTextChanged", function(self)
@@ -392,7 +393,7 @@ local function build(parent)
   detail.hint:SetWidth(DETAIL_W - 50)
   detail.hint:SetWordWrap(true)
   detail.hint:SetSpacing(4)
-  detail.hint:SetText("Clique sur un objet du graphe pour allumer sa chaîne de fabrication et voir sa rentabilité.")
+  detail.hint:SetText(L["Clique sur un objet du graphe pour allumer sa chaîne de fabrication et voir sa rentabilité."])
   detail.rows = {}
   local function detailRow(i)
     local row = detail.rows[i]
@@ -424,7 +425,7 @@ local function build(parent)
 
     local item = ns.Item(n.id)
     detail.icon:SetItem(n.id)
-    detail.name:SetText(item.name or ("Objet " .. n.id))
+    detail.name:SetText(item.name or ns.Lf("Objet %d", n.id))
     detail.name:SetTextColor(ns.QualityColor(item.quality))
 
     local y, index = -70, 0
@@ -449,15 +450,15 @@ local function build(parent)
     if n.r then
       local r, bilan = n.r, n.bilan or ns.RecipeProfit(n.r)
       local known = ns.db.known[r.spell]
-      detail.sub:SetText(ns.SkillName(r.skill) .. (r.lvl > 0 and (" · niveau " .. r.lvl) or "") ..
-        (known and "" or (" · " .. UI.Hex("red") .. "non apprise|r")))
-      line("COMPOSANTS", r.qty > 1 and ("pour " .. r.qty) or "", { color = "faint" })
+      detail.sub:SetText(ns.SkillName(r.skill) .. (r.lvl > 0 and (" · " .. ns.Lf("niveau %d", r.lvl)) or "") ..
+        (known and "" or (" · " .. UI.Hex("red") .. L["non apprise"] .. "|r")))
+      line(L["COMPOSANTS"], r.qty > 1 and ns.Lf("pour %d", r.qty) or "", { color = "faint" })
       for _, c in ipairs(r.reag) do
         local cost, src = ns.BestCost(c.id)
         line(c.n .. " × " .. ns.ItemName(c.id),
-          cost and (ns.Money(cost * c.n) .. UI.Hex("faint") .. " " .. (SHORT[src] or "") .. "|r") or (UI.Hex("red") .. "prix inconnu|r"))
+          cost and (ns.Money(cost * c.n) .. UI.Hex("faint") .. " " .. (SHORT[src] and L[SHORT[src]] or "") .. "|r") or (UI.Hex("red") .. L["prix inconnu"] .. "|r"))
       end
-      line("Coût de fabrication", bilan.complete and ns.Money(bilan.cost) or (UI.Hex("red") .. "incomplet|r"), { gap = true, rule = true })
+      line(L["Coût de fabrication"], bilan.complete and ns.Money(bilan.cost) or (UI.Hex("red") .. L["incomplet"] .. "|r"), { gap = true, rule = true })
       -- Ce que la fabrication te coûte vraiment : tes composants en stock à leur prix de
       -- revient, les autres au prix du marché.
       local real, mine, realComplete = 0, false, true
@@ -468,46 +469,48 @@ local function build(parent)
         if cost then real = real + cost * c.n else realComplete = false end
       end
       if not (mine and realComplete) then real = nil end
-      if real then line("  avec ton stock", ns.Money(real), { color = "muted" }) end
+      if real then line("  " .. L["avec ton stock"], ns.Money(real), { color = "muted" }) end
       if bilan.sale then
-        line("Vente (" .. SRC[bilan.saleSrc] .. ")", ns.Money(bilan.sale))
+        line(ns.Lf("Vente (%s)", L[SRC[bilan.saleSrc]]), ns.Money(bilan.sale))
         if bilan.saleSrc == "hv" then
-          line("Taxe de l'HV (5 %)", UI.Hex("muted") .. ns.Money(-(bilan.sale - bilan.net)) .. "|r")
+          line(L["Taxe de l'HV (5 %)"], UI.Hex("muted") .. ns.Money(-(bilan.sale - bilan.net)) .. "|r")
         end
       else
-        line("Vente", UI.Hex("faint") .. "aucun prix|r")
+        line(L["Vente"], UI.Hex("faint") .. L["aucun prix"] .. "|r")
       end
       if bilan.profit then
         local color = bilan.profit >= 0 and "green" or "red"
-        line("Bénéfice", UI.Hex(color) .. ns.Money(bilan.profit, true) .. "|r", { gap = true, rule = true })
+        line(L["Bénéfice"], UI.Hex(color) .. ns.Money(bilan.profit, true) .. "|r", { gap = true, rule = true })
         if bilan.margin then
-          line("Marge", UI.Hex(color) .. string.format("%+.0f %%", bilan.margin * 100) .. "|r")
+          line(L["Marge"], UI.Hex(color) .. ns.Lf("%+.0f %%", bilan.margin * 100) .. "|r")
         end
       end
       if real and bilan.net then
         local profit = bilan.net - real
-        line("  avec ton stock", UI.Hex(profit >= 0 and "green" or "red") .. ns.Money(profit, true) .. "|r", { color = "muted" })
+        line("  " .. L["avec ton stock"], UI.Hex(profit >= 0 and "green" or "red") .. ns.Money(profit, true) .. "|r", { color = "muted" })
       end
       local market = ns.MarketPrice(n.id)
       if market and bilan.complete and r.qty > 0 then
         local craft = bilan.cost / r.qty
-        line(craft < market and "Moins cher à fabriquer" or "Moins cher à acheter",
-          ns.Money(math.abs(market - craft)) .. " / u", { gap = true, color = "muted" })
+        line(craft < market and L["Moins cher à fabriquer"] or L["Moins cher à acheter"],
+          ns.Lf("%s / u", ns.Money(math.abs(market - craft))), { gap = true, color = "muted" })
       end
     else
-      detail.sub:SetText("Matière première")
+      detail.sub:SetText(L["Matière première"])
       local market, when, qty = ns.MarketPrice(n.id)
       local vendor = ns.VendorPrice(n.id)
-      line("PRIX D'ACHAT", "", { color = "faint" })
-      line("Hôtel des ventes", market and ns.Money(market) or (UI.Hex("faint") .. "aucun prix|r"))
-      if market then line("  relevé " .. ns.Ago(when), qty and (qty .. " en vente") or "", { color = "muted" }) end
-      line("Marchand", vendor and ns.Money(vendor) or (UI.Hex("faint") .. "—|r"))
+      line(L["PRIX D'ACHAT"], "", { color = "faint" })
+      line(L["Hôtel des ventes"], market and ns.Money(market) or (UI.Hex("faint") .. L["aucun prix"] .. "|r"))
+      if market then line("  " .. ns.Lf("relevé %s", ns.Ago(when)), qty and ns.Lf("%d en vente", qty) or "", { color = "muted" }) end
+      line(L["Marchand"], vendor and ns.Money(vendor) or (UI.Hex("faint") .. "—|r"))
     end
-    line("En stock", owned > 0 and tostring(owned) or (UI.Hex("faint") .. "0|r"), { gap = true, rule = true })
+    line(L["En stock"], owned > 0 and tostring(owned) or (UI.Hex("faint") .. "0|r"), { gap = true, rule = true })
     local ownCost = owned > 0 and ns.UnitCost and ns.UnitCost(n.id)
-    if ownCost then line("Ton coût de revient / u", ns.Money(ownCost)) end
-    if #n.uses > 0 then
-      line("Sert à " .. #n.uses .. " recette" .. (#n.uses > 1 and "s" or "") .. " du graphe", "", { color = "muted" })
+    if ownCost then line(L["Ton coût de revient / u"], ns.Money(ownCost)) end
+    if #n.uses == 1 then
+      line(L["Sert à 1 recette du graphe"], "", { color = "muted" })
+    elseif #n.uses > 1 then
+      line(ns.Lf("Sert à %d recettes du graphe", #n.uses), "", { color = "muted" })
     end
   end
 
@@ -568,7 +571,7 @@ local function build(parent)
     b:SetSize(width, NODE_H)
     b.icon:SetItem(n.id)
     b.sub:SetWidth(width - 42 - 6)
-    b.name:SetText(item.name or ("Objet " .. n.id))
+    b.name:SetText(item.name or ns.Lf("Objet %d", n.id))
     b.name:SetTextColor(ns.QualityColor(item.quality))
     local holdings = graph.holdings[n.id]
     local owned = holdings and holdings.q > 0
@@ -581,12 +584,12 @@ local function build(parent)
       local bilan = n.bilan
       if bilan.profit then
         local color = bilan.profit >= 0 and "green" or "red"
-        local margin = bilan.margin and string.format("  %+.0f %%", bilan.margin * 100) or ""
+        local margin = bilan.margin and ("  " .. ns.Lf("%+.0f %%", bilan.margin * 100)) or ""
         b.sub:SetText(UI.Hex(color) .. ns.Money(bilan.profit, true) .. margin .. "|r")
       elseif not bilan.complete then
-        b.sub:SetText(UI.Hex("faint") .. "coût incomplet|r")
+        b.sub:SetText(UI.Hex("faint") .. L["coût incomplet"] .. "|r")
       else
-        b.sub:SetText(UI.Hex("faint") .. "coût " .. ns.Money(bilan.cost) .. " · pas de prix de vente|r")
+        b.sub:SetText(UI.Hex("faint") .. ns.Lf("coût %s · pas de prix de vente", ns.Money(bilan.cost)) .. "|r")
       end
     else
       -- Matière ou composant : le meilleur moyen de se le procurer.
@@ -595,14 +598,14 @@ local function build(parent)
       local buy, buySrc = ns.BuyPrice(n.id)
       if craft and buy then
         -- Composant qu'on peut fabriquer ou acheter : les deux prix, le moins cher en premier.
-        local a = ns.Money(craft, false, true) .. " " .. SHORT.fab
-        local z = ns.Money(buy, false, true) .. " " .. SHORT[buySrc]
+        local a = ns.Money(craft, false, true) .. " " .. L[SHORT.fab]
+        local z = ns.Money(buy, false, true) .. " " .. L[SHORT[buySrc]]
         if buy < craft then a, z = z, a end
         b.sub:SetText(a .. UI.Hex("faint") .. " · " .. z .. "|r")
       elseif cost then
-        b.sub:SetText(ns.Money(cost) .. UI.Hex("faint") .. " · " .. (SRC[src] or "") .. "|r")
+        b.sub:SetText(ns.Money(cost) .. UI.Hex("faint") .. " · " .. (SRC[src] and L[SRC[src]] or "") .. "|r")
       else
-        b.sub:SetText(UI.Hex("faint") .. "prix inconnu|r")
+        b.sub:SetText(UI.Hex("faint") .. L["prix inconnu"] .. "|r")
       end
     end
     if n.r and not ns.db.known[n.r.spell] then
@@ -696,7 +699,7 @@ local function build(parent)
         titles[c] = title
       end
       title.x = x + 4
-      title:SetText(c == 1 and COLUMN_TITLES.first or (c == ncol and COLUMN_TITLES.last or COLUMN_TITLES.mid))
+      title:SetText(L[c == 1 and COLUMN_TITLES.first or (c == ncol and COLUMN_TITLES.last or COLUMN_TITLES.mid)])
       title:SetShown(#col > 0 or c == 1 or c == ncol)
       for index, n in ipairs(col) do
         used = used + 1
@@ -728,7 +731,7 @@ local function build(parent)
   function f:Refresh()
     local skills = ns.PlayerSkills()
     if ui.prodSkill == 0 then
-      skillButton:SetLabel("Tous mes métiers")
+      skillButton:SetLabel(L["Tous mes métiers"])
     else
       skillButton:SetLabel(ns.SkillName(ui.prodSkill))
     end
@@ -742,16 +745,15 @@ local function build(parent)
     if graph.shown == 0 then
       local why
       if graph.candidates == 0 and ui.prodKnown then
-        why = "Aucune recette connue ici pour l'instant.\nOuvre ta fenêtre de métier une fois pour que Négoce lise tes recettes, " ..
-          "ou désactive « Mes recettes » pour voir toutes celles du métier."
+        why = L["Aucune recette connue ici pour l'instant.\nOuvre ta fenêtre de métier une fois pour que Négoce lise tes recettes, ou désactive « Mes recettes » pour voir toutes celles du métier."]
       elseif graph.candidates == 0 and ui.prodSkill == 0 then
-        why = "Aucun métier de fabrication détecté sur ce personnage.\nChoisis un métier dans le menu pour explorer ses recettes."
+        why = L["Aucun métier de fabrication détecté sur ce personnage.\nChoisis un métier dans le menu pour explorer ses recettes."]
       elseif graph.candidates == 0 then
-        why = "Aucune recette pour ce métier."
+        why = L["Aucune recette pour ce métier."]
       elseif ui.prodProfit then
-        why = "Aucune recette rentable avec les prix connus.\nUn scan de l'HV récent donne de meilleurs résultats."
+        why = L["Aucune recette rentable avec les prix connus.\nUn scan de l'HV récent donne de meilleurs résultats."]
       else
-        why = "Aucun produit ne correspond à la recherche."
+        why = L["Aucun produit ne correspond à la recherche."]
       end
       emptyText:SetText(why)
       emptyText:Show()
@@ -759,9 +761,11 @@ local function build(parent)
     else
       emptyText:Hide()
       if graph.total > graph.shown then
-        summary:SetText(string.format("%d produits les plus rentables sur %d", graph.shown, graph.total))
+        summary:SetText(ns.Lf("%d produits les plus rentables sur %d", graph.shown, graph.total))
+      elseif graph.shown == 1 then
+        summary:SetText(L["1 produit"])
       else
-        summary:SetText(string.format("%d produit%s", graph.shown, graph.shown > 1 and "s" or ""))
+        summary:SetText(ns.Lf("%d produits", graph.shown))
       end
     end
     self:Paint()

@@ -12,6 +12,7 @@
 --   fabrication : les composants sortent à leur coût moyen, le produit entre avec ce coût ;
 --   vente, envoi, utilisation : sortie au coût moyen.
 local ADDON, ns = ...
+local L = ns.L
 
 local LOG_MAX = 400
 local PEND_DAYS = 31
@@ -465,12 +466,12 @@ end)
 function ns.PrintTracking(count)
   local T = track()
   if not T or #T.log == 0 then
-    ns.Print("aucun mouvement d'objet enregistré pour l'instant.")
+    ns.Print(L["aucun mouvement d'objet enregistré pour l'instant."])
     return
   end
   for i = math.max(1, #T.log - (count or 15) + 1), #T.log do
     local e = T.log[i]
     ns.Print(string.format("%s  %+d %s · %s · %s", date("%H:%M", e.t), e.n, ns.ItemName(e.id),
-      ns.SOURCES[e.s] or e.s, ns.Money(e.c)))
+      ns.SOURCES[e.s] and L[ns.SOURCES[e.s]] or e.s, ns.Money(e.c)))
   end
 end

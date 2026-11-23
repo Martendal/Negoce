@@ -3,6 +3,7 @@
 -- tout ce que tu possèdes) et, pour un objet fabricable, son coût de fabrication au marché.
 --   /negoce infobulle : afficher ou masquer ce bloc.
 local ADDON, ns = ...
+local L = ns.L
 
 local ACCENT = { 0.88, 0.69, 0.31 }
 local LABEL = { 0.72, 0.70, 0.66 }
@@ -55,20 +56,20 @@ local function addLines(tooltip, id)
   tooltip:AddLine("Négoce", ACCENT[1], ACCENT[2], ACCENT[3])
   if unit then
     local count = (not shift and tracked and tracked > 1) and ("  |cff8c8880(×" .. tracked .. ")|r") or ""
-    row("Coût de revient", ns.Money(unit * mult) .. count)
+    row(L["Coût de revient"], ns.Money(unit * mult) .. count)
   end
   if market and market > 0 and not bound then
-    row("Cours HV", ns.Money(market * mult))
+    row(L["Cours HV"], ns.Money(market * mult))
     if unit then
       local margin = (market * (1 - ns.AH_CUT) - unit) * mult
       local color = margin >= 0 and "|cff5ccb6b" or "|cffe0605a"
-      row("Marge nette", color .. ns.Money(margin, true) .. "|r")
+      row(L["Marge nette"], color .. ns.Money(margin, true) .. "|r")
     end
   end
   if shift and ns.byProduct[id] then
     ns.ResetCosts()
     local _, craft = ns.CheapestRecipe(id)
-    if craft then row("Fabrication au marché", ns.Money(craft * mult)) end
+    if craft then row(L["Fabrication au marché"], ns.Money(craft * mult)) end
   end
 end
 

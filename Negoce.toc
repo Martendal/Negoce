@@ -1,8 +1,9 @@
 ## Interface: 16001
 ## Title: |cffe0b050Négoce|r
-## Notes: Ton entreprise dans WoW Forever : patrimoine, portefeuille, prix de l'hôtel des ventes, prix de revient et rentabilité des recettes. Observe et calcule, n'achète ni ne vend jamais à ta place.
+## Notes: Your business in WoW Forever: net worth, portfolio, auction house prices, cost price and recipe profitability. It watches and calculates, it never buys or sells for you.
+## Notes-frFR: Ton entreprise dans WoW Forever : patrimoine, portefeuille, prix de l'hôtel des ventes, prix de revient et rentabilité des recettes. Observe et calcule, n'achète ni ne vend jamais à ta place.
 ## Author: Négoce
-## Version: 1.1.1
+## Version: 1.2.0
 ## IconTexture: Interface\Icons\INV_Misc_Coin_01
 ## SavedVariables: NegocePrix
 ## SavedVariablesPerCharacter: NegoceDB
@@ -13,6 +14,9 @@ Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
 Libs\LibDBIcon-1.0\LibDBIcon-1.0.lua
 
 Data\Recettes.lua
+
+Locales\Locales.lua
+Locales\enUS.lua
 
 Core.lua
 Prix.lua

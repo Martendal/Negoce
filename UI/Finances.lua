@@ -1,6 +1,7 @@
 -- Négoce : onglet Finances. Patrimoine, courbe, portefeuille, flux d'or, achats et ventes.
 local ADDON, ns = ...
 local UI = ns.UI
+local L = ns.L
 
 local PAD = 20
 local PERIODS = {
@@ -37,7 +38,7 @@ local function buildHeader(parent, cols, onSort)
     b:SetPoint("LEFT", col.x, 0)
     local label = UI.Text(b, 10, "faint", col.justify)
     label:SetAllPoints()
-    label:SetText(col.label:upper())
+    label:SetText(L[col.label]:upper())
     header.labels[col.key] = label
     if col.sort and onSort then
       b:SetScript("OnClick", function() onSort(col.sort) end)
@@ -78,7 +79,7 @@ local function build(parent)
     card:SetPoint("TOPLEFT", PAD + (i - 1) * (cardW + 12), -16)
     card.label = UI.Text(card, 10, "faint")
     card.label:SetPoint("TOPLEFT", 16, -12)
-    card.label:SetText(def[2])
+    card.label:SetText(L[def[2]])
     card.value = UI.Text(card, 19, i == 1 and "accent" or "text")
     card.value:SetPoint("TOPLEFT", 16, -28)
     card.sub = UI.Text(card, 11, "muted")
@@ -92,12 +93,12 @@ local function build(parent)
   chartPanel:SetPoint("TOPLEFT", PAD, -106)
   local chartTitle = UI.Text(chartPanel, 13, "text")
   chartTitle:SetPoint("TOPLEFT", 16, -13)
-  chartTitle:SetText("Évolution du patrimoine")
+  chartTitle:SetText(L["Évolution du patrimoine"])
   local legend = UI.Text(chartPanel, 11, "muted")
   legend:SetPoint("LEFT", chartTitle, "RIGHT", 18, 0)
-  legend:SetText(UI.Hex("accent") .. "—|r patrimoine    " .. UI.Hex("blue") .. "—|r or seul")
+  legend:SetText(UI.Hex("accent") .. "—|r " .. L["patrimoine"] .. "    " .. UI.Hex("blue") .. "—|r " .. L["or seul"])
   local periodEntries = {}
-  for _, p in ipairs(PERIODS) do periodEntries[#periodEntries + 1] = { key = p.key, label = p.label } end
+  for _, p in ipairs(PERIODS) do periodEntries[#periodEntries + 1] = { key = p.key, label = L[p.label] } end
   local periods = UI.Segment(chartPanel, periodEntries, function(key)
     ui.period = key
     f:Refresh()
@@ -108,9 +109,9 @@ local function build(parent)
 
   -- Vues du bas
   local views = UI.Segment(f, {
-    { key = "portefeuille", label = "Portefeuille", w = 120 },
-    { key = "flux", label = "Flux d'or", w = 120 },
-    { key = "journal", label = "Achats et ventes", w = 140 },
+    { key = "portefeuille", label = L["Portefeuille"], w = 120 },
+    { key = "flux", label = L["Flux d'or"], w = 120 },
+    { key = "journal", label = L["Achats et ventes"], w = 140 },
   }, function(key)
     ui.finView = key
     f:Refresh()
@@ -148,14 +149,14 @@ local function build(parent)
   end, function(row, p)
     local item = ns.Item(p.id)
     row.icon:SetItem(p.id)
-    row.cells.name:SetText(item.name or ("Objet " .. p.id))
+    row.cells.name:SetText(item.name or ns.Lf("Objet %d", p.id))
     row.cells.name:SetTextColor(ns.QualityColor(item.quality))
     row.cells.q:SetText(p.q)
     local where = {}
-    if p.bags > 0 then where[#where + 1] = "sacs " .. p.bags end
-    if p.bank > 0 then where[#where + 1] = "banque " .. p.bank end
-    if p.mail > 0 then where[#where + 1] = "courrier " .. p.mail end
-    if p.ah > 0 then where[#where + 1] = "en vente " .. p.ah end
+    if p.bags > 0 then where[#where + 1] = ns.Lf("sacs %d", p.bags) end
+    if p.bank > 0 then where[#where + 1] = ns.Lf("banque %d", p.bank) end
+    if p.mail > 0 then where[#where + 1] = ns.Lf("courrier %d", p.mail) end
+    if p.ah > 0 then where[#where + 1] = ns.Lf("en vente %d", p.ah) end
     row.cells.where:SetText(table.concat(where, " · "))
     row.cells.where:SetTextColor(UI.Color("muted"))
     if p.unitCost then
@@ -163,7 +164,7 @@ local function build(parent)
     else
       row.cells.cost:SetText(UI.Hex("faint") .. "—|r")
     end
-    row.cells.unit:SetText(ns.Money(p.unit) .. (p.src == "marchand" and (UI.Hex("faint") .. " m|r") or ""))
+    row.cells.unit:SetText(ns.Money(p.unit) .. (p.src == "marchand" and (UI.Hex("faint") .. " " .. L["m"] .. "|r") or ""))
     row.cells.value:SetText(ns.Money(p.value))
     row.cells.gain:SetText(signed(p.gain))
   end)
@@ -219,9 +220,9 @@ local function build(parent)
     row:HookScript("OnLeave", function() GameTooltip:Hide() end)
   end, function(row, e)
     row.icon:SetItem(e.id)
-    row.cells.date:SetText(date("%d/%m %H:%M", e.t))
+    row.cells.date:SetText(ns.Date(e.t, true))
     row.cells.date:SetTextColor(UI.Color("muted"))
-    row.cells.kind:SetText(e.sale and (UI.Hex("green") .. "Vente|r") or (UI.Hex("blue") .. "Achat|r"))
+    row.cells.kind:SetText(e.sale and (UI.Hex("green") .. L["Vente"] .. "|r") or (UI.Hex("blue") .. L["Achat"] .. "|r"))
     row.cells.name:SetText(e.n or (e.id and ns.ItemName(e.id)) or "?")
     row.cells.q:SetText(e.q or (UI.Hex("faint") .. "—|r"))
     row.cells.p:SetText(ns.Money(e.p))
@@ -268,25 +269,25 @@ local function build(parent)
       if pt.t > since then break end
     end
     if base and #db.wealth > 1 then
-      cards.total.sub:SetText(signed(total - (base.g + base.s + (base.m or 0))) .. " sur la période")
+      cards.total.sub:SetText(ns.Lf("%s sur la période", signed(total - (base.g + base.s + (base.m or 0)))))
     else
-      cards.total.sub:SetText("suivi démarré à l'instant")
+      cards.total.sub:SetText(L["suivi démarré à l'instant"])
     end
 
     cards.gold.value:SetText(ns.Money(gold))
-    cards.gold.sub:SetText(mailGold > 0 and ("+ " .. ns.Money(mailGold) .. " au courrier") or "en poche")
+    cards.gold.sub:SetText(mailGold > 0 and ns.Lf("+ %s au courrier", ns.Money(mailGold)) or L["en poche"])
 
     cards.stock.value:SetText(ns.Money(stock))
-    local bank = db.bank and ("banque vue " .. ns.Ago(db.bank.updated)) or "banque jamais vue : ouvre-la une fois"
-    cards.stock.sub:SetText(lines .. " objets · " .. bank)
+    local bank = db.bank and ns.Lf("banque vue %s", ns.Ago(db.bank.updated)) or L["banque jamais vue : ouvre-la une fois"]
+    cards.stock.sub:SetText(ns.Lf("%d objets · %s", lines, bank))
 
     local market = ns.Market()
     if market.scan then
-      cards.market.value:SetText((market.count or 0) .. " prix")
-      cards.market.sub:SetText("relevés " .. ns.Ago(market.scan))
+      cards.market.value:SetText(ns.Lf("%d prix", market.count or 0))
+      cards.market.sub:SetText(ns.Lf("relevés %s", ns.Ago(market.scan)))
     else
-      cards.market.value:SetText("Aucun prix")
-      cards.market.sub:SetText("à l'HV : « Négoce : scanner les prix »")
+      cards.market.value:SetText(L["Aucun prix"])
+      cards.market.sub:SetText(L["à l'HV : « Négoce : scanner les prix »"])
     end
     return positions
   end
@@ -298,7 +299,7 @@ local function build(parent)
         points[#points + 1] = { t = pt.t, a = pt.g + pt.s + (pt.m or 0), b = pt.g }
       end
     end
-    chart:SetSeries(points, "Patrimoine", "Or")
+    chart:SetSeries(points, L["Patrimoine"], L["Or"])
   end
 
   local function refreshPortfolio(positions)
@@ -315,23 +316,23 @@ local function build(parent)
     for _, p in ipairs(positions) do
       if p.gain then gain, hasGain = gain + p.gain, true end
     end
-    hint:SetText(hasGain and ("Marge si tu vendais tout, taxe de l'HV déduite : " .. signed(gain)) or
-      "Le prix de revient se calcule dès que tes sacs ont été lus.")
-    pfList:SetData(positions, "Rien en stock pour l'instant.")
+    hint:SetText(hasGain and ns.Lf("Marge si tu vendais tout, taxe de l'HV déduite : %s", signed(gain)) or
+      L["Le prix de revient se calcule dès que tes sacs ont été lus."])
+    pfList:SetData(positions, L["Rien en stock pour l'instant."])
   end
 
   local function refreshFlows(since)
     local totals = ns.FlowTotals(since)
     local rows, max, inSum, outSum = {}, 1, 0, 0
     for cat, c in pairs(totals) do
-      rows[#rows + 1] = { label = ns.CATEGORIES[cat] or cat, i = c.i, o = c.o }
+      rows[#rows + 1] = { label = ns.CATEGORIES[cat] and L[ns.CATEGORIES[cat]] or cat, i = c.i, o = c.o }
       max = math.max(max, c.i, c.o)
       inSum, outSum = inSum + c.i, outSum + c.o
     end
     for _, r in ipairs(rows) do r.max = max end
     table.sort(rows, function(a, b) return (a.i + a.o) > (b.i + b.o) end)
-    hint:SetText("Sur la période : " .. signed(inSum - outSum))
-    fxList:SetData(rows, "Aucun mouvement d'or sur la période.")
+    hint:SetText(ns.Lf("Sur la période : %s", signed(inSum - outSum)))
+    fxList:SetData(rows, L["Aucun mouvement d'or sur la période."])
   end
 
   local function refreshJournal(since)
@@ -349,11 +350,15 @@ local function build(parent)
     end
     table.sort(rows, function(a, b) return a.t > b.t end)
     if counted > 0 then
-      hint:SetText("Bénéfice réalisé sur " .. counted .. " vente" .. (counted > 1 and "s" or "") .. " : " .. signed(profit))
+      if counted == 1 then
+        hint:SetText(ns.Lf("Bénéfice réalisé sur 1 vente : %s", signed(profit)))
+      else
+        hint:SetText(ns.Lf("Bénéfice réalisé sur %d ventes : %s", counted, signed(profit)))
+      end
     else
-      hint:SetText("Lu sur les factures de l'HV quand tu ouvres ta boîte aux lettres.")
+      hint:SetText(L["Lu sur les factures de l'HV quand tu ouvres ta boîte aux lettres."])
     end
-    jrList:SetData(rows, "Aucun achat ni vente à l'HV sur la période.")
+    jrList:SetData(rows, L["Aucun achat ni vente à l'HV sur la période."])
   end
 
   function f:Refresh()

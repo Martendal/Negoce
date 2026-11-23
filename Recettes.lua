@@ -48,7 +48,8 @@ ns.AtLogin(function()
 end)
 
 function ns.SkillName(skill)
-  return (ns.DATA and ns.DATA.metiers[skill]) or ("Métier " .. tostring(skill))
+  local name = ns.DATA and ns.DATA.metiers[skill]
+  return name and ns.L[name] or ns.Lf("Métier %s", tostring(skill))
 end
 
 ---------------------------------------------------------------------------

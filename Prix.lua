@@ -4,6 +4,7 @@
 -- renvoie pour chaque objet son prix le plus bas et la quantité en vente. Les recherches que tu
 -- fais toi-même à l'HV mettent aussi les prix à jour, sans rien faire de plus.
 local ADDON, ns = ...
+local L = ns.L
 
 local AH = C_AuctionHouse
 
@@ -192,7 +193,7 @@ local function finishScan(complete)
   scan = nil
   if s.ticker then s.ticker:Cancel() end
   if not complete then
-    ns.Print("scan interrompu : aucun prix n'a été modifié.")
+    ns.Print(L["scan interrompu : aucun prix n'a été modifié."])
     notifyScan()
     return
   end
@@ -212,7 +213,7 @@ local function finishScan(complete)
     else
       local market = ns.Market()
       market.scan, market.count = now, #ids
-      ns.Print(string.format("scan terminé : %d objets relevés.", #ids))
+      ns.Print(ns.Lf("scan terminé : %d objets relevés.", #ids))
       if ns.Sample then ns.Try("patrimoine", ns.Sample, true) end
       notifyScan()
       ns.Changed()
@@ -266,11 +267,11 @@ end
 function ns.StartScan()
   if scan then return end
   if not (AH and AH.SendBrowseQuery and AH.RequestMoreBrowseResults) then
-    ns.Print("ce client n'expose pas l'hôtel des ventes moderne : scan impossible.")
+    ns.Print(L["ce client n'expose pas l'hôtel des ventes moderne : scan impossible."])
     return
   end
   if not (AuctionHouseFrame and AuctionHouseFrame:IsShown()) then
-    ns.Print("ouvre l'hôtel des ventes pour scanner les prix.")
+    ns.Print(L["ouvre l'hôtel des ventes pour scanner les prix."])
     return
   end
   scan = { min = {}, qty = {}, count = 0, started = GetTime(), lastEvent = GetTime() }
@@ -332,10 +333,10 @@ local function updateButton()
   if not button then return end
   local state, count = ns.ScanState()
   if state == "scan" then
-    button:SetText(string.format("Scan… %d objets", count))
+    button:SetText(ns.Lf("Scan… %d objets", count))
     button:Disable()
   else
-    button:SetText("Négoce : scanner les prix")
+    button:SetText(L["Négoce : scanner les prix"])
     button:Enable()
   end
 end
@@ -350,9 +351,9 @@ ns.On("AUCTION_HOUSE_SHOW", function()
   button:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_TOP")
     GameTooltip:AddLine("Négoce")
-    GameTooltip:AddLine("Relève le prix le plus bas de chaque objet en vente.", 1, 1, 1, true)
+    GameTooltip:AddLine(L["Relève le prix le plus bas de chaque objet en vente."], 1, 1, 1, true)
     local market = ns.Market()
-    GameTooltip:AddLine("Dernier scan : " .. ns.Ago(market.scan), 0.7, 0.7, 0.7)
+    GameTooltip:AddLine(ns.Lf("Dernier scan : %s", ns.Ago(market.scan)), 0.7, 0.7, 0.7)
     GameTooltip:Show()
   end)
   button:SetScript("OnLeave", function() GameTooltip:Hide() end)

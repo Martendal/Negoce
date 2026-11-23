@@ -1,8 +1,9 @@
 -- Négoce : noyau. Bases de données, événements du jeu, messages internes, objets, monnaie.
 -- L'addon observe et calcule : il n'achète, ne vend et ne poste jamais rien à ta place.
 local ADDON, ns = ...
+local L = ns.L
 
-ns.VERSION = "1.1.1"
+ns.VERSION = "1.2.0"
 ns.AH_CUT = 0.05          -- part prélevée par l'hôtel des ventes sur une vente
 ns.MAX_MONEY_LOG = 6000   -- mouvements d'or gardés
 ns.MAX_LOG = 2000         -- achats, ventes, mises en vente gardés
@@ -27,7 +28,7 @@ function ns.ItemIDFromLink(link)
 end
 
 function ns.Print(msg)
-  print("|cffe0b050Négoce|r : " .. tostring(msg))
+  print(ns.Lf("%s : %s", "|cffe0b050Négoce|r", tostring(msg)))
 end
 
 local errorAnnounced = false
@@ -39,7 +40,7 @@ function ns.Error(where, err)
   end
   if (db and db.debug) or not errorAnnounced then
     errorAnnounced = true
-    ns.Print("erreur dans " .. tostring(where) .. " (détails : /negoce erreurs)")
+    ns.Print(ns.Lf("erreur dans %s (détails : /negoce erreurs)", tostring(where)))
   end
 end
 
@@ -62,9 +63,10 @@ local SILVER = "|TInterface\\MoneyFrame\\UI-SilverIcon:0:0:1:0|t"
 local COPPER = "|TInterface\\MoneyFrame\\UI-CopperIcon:0:0:1:0|t"
 
 local function thousands(n)
+  local sep = ns.lang == "fr" and " " or ","
   local s = tostring(n)
-  local out = s:reverse():gsub("(%d%d%d)", "%1 "):reverse()
-  return (out:gsub("^ ", ""))
+  local out = s:reverse():gsub("(%d%d%d)", "%1" .. sep):reverse()
+  return (out:gsub("^" .. sep, ""))
 end
 
 -- Montant avec les icônes de pièces. Les grosses sommes perdent le cuivre, puis l'argent,
@@ -92,13 +94,19 @@ function ns.Money(c, withSign, short)
 end
 
 -- « il y a 5 min », « il y a 3 h », « il y a 2 j ».
+
+-- Date courte : jour et mois, avec l'heure si withTime. Le format dépend de la langue
+-- (« 23/11 14:05 », « Nov 23 14:05 »).
+function ns.Date(t, withTime)
+  return date(withTime and L["%d/%m %H:%M"] or L["%d/%m"], t)
+end
 function ns.Ago(t)
-  if not t then return "jamais" end
+  if not t then return L["jamais"] end
   local d = math.max(0, time() - t)
-  if d < 90 then return "à l'instant" end
-  if d < 3600 then return string.format("il y a %d min", math.floor(d / 60)) end
-  if d < 86400 then return string.format("il y a %d h", math.floor(d / 3600)) end
-  return string.format("il y a %d j", math.floor(d / 86400))
+  if d < 90 then return L["à l'instant"] end
+  if d < 3600 then return ns.Lf("il y a %d min", math.floor(d / 60)) end
+  if d < 86400 then return ns.Lf("il y a %d h", math.floor(d / 3600)) end
+  return ns.Lf("il y a %d j", math.floor(d / 86400))
 end
 
 ---------------------------------------------------------------------------
@@ -201,7 +209,7 @@ function ns.Item(id)
 end
 
 function ns.ItemName(id)
-  return ns.Item(id).name or ("Objet " .. id)
+  return ns.Item(id).name or ns.Lf("Objet %d", id)
 end
 
 ns.On("GET_ITEM_INFO_RECEIVED", function(_, itemID)
@@ -251,6 +259,7 @@ local function initDB()
   px.vendors = px.vendors or {}
   px.recipes = px.recipes or {}
   ns.px = px
+  ns.SetLanguage(px.lang)
 end
 
 function ns.NextSeq()

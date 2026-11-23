@@ -3,9 +3,26 @@
 -- Ne remplace pas un essai en jeu : vérifie seulement que la logique tourne sans erreur.
 --
 --   lua outils/test_hors_jeu.lua        (depuis la racine du dépôt)
+--
+-- Sans argument, l'essai tourne deux fois : client français (frFR), puis anglais (enUS). En
+-- anglais il vérifie en plus que chaque texte affiché a sa traduction.
 
 -- Dossier de l'addon : le parent du dossier de ce script.
 local ROOT = (arg and arg[0] or ""):match("^(.-)outils/[^/]*$") or ""
+
+local LOCALE = arg and arg[1]
+if not LOCALE then
+  local lua, script = arg[-1] or "lua", arg[0]
+  local ok = true
+  for _, locale in ipairs({ "frFR", "enUS" }) do
+    io.write("\n=== Client ", locale, " ===\n")
+    io.flush()
+    local r = os.execute(string.format("%q %q %s", lua, script, locale))
+    if r ~= true and r ~= 0 then ok = false end
+  end
+  io.write(ok and "\nTout passe, dans les deux langues.\n" or "\nDes essais échouent.\n")
+  os.exit(ok and 0 or 1)
+end
 local now = 1794440000
 local clock = 100
 
@@ -43,7 +60,11 @@ function Widget:GetFrameLevel() return self.level end
 function Widget:GetEffectiveScale() return 1 end
 function Widget:GetLeft() return 0 end
 function Widget:IsMouseOver() return false end
-function Widget:SetText(t) self.text = t end
+local shownTexts = {} -- tout ce qui s'affiche : textes, infobulles, messages du chat
+function Widget:SetText(t)
+  self.text = t
+  if type(t) == "string" then shownTexts[#shownTexts + 1] = t end
+end
 function Widget:GetText() return self.text or "" end
 function Widget:GetVerticalScroll() return self.vs or 0 end
 function Widget:SetVerticalScroll(v) self.vs = v end
@@ -69,7 +90,11 @@ end
 UIParent, GameTooltip = widget("Frame"), widget("GameTooltip")
 local tipLines = {}
 function GameTooltip:GetItem() return "x", "|Hitem:2840|h[x]|h" end
-function GameTooltip:AddDoubleLine(left, right) tipLines[#tipLines + 1] = left .. " = " .. right end
+function GameTooltip:AddDoubleLine(left, right)
+  tipLines[#tipLines + 1] = left .. " = " .. right
+  shownTexts[#shownTexts + 1] = left
+end
+function GameTooltip:AddLine(text) shownTexts[#shownTexts + 1] = text end
 UISpecialFrames, SlashCmdList = {}, {}
 STANDARD_TEXT_FONT = "Fonts\\FRIZQT__.TTF"
 tinsert = table.insert
@@ -85,7 +110,12 @@ function hooksecurefunc(a, b, c)
     _G[a] = function(...) local r = old(...) b(...) return r end
   end
 end
-function print(...) io.write("  [jeu] ", table.concat({ ... }, " "), "\n") end
+function print(...)
+  local line = table.concat({ ... }, " ")
+  shownTexts[#shownTexts + 1] = line
+  io.write("  [jeu] ", line, "\n")
+end
+function GetLocale() return LOCALE end
 
 local timers = {}
 C_Timer = {
@@ -220,6 +250,17 @@ for line in io.lines(ROOT .. "Negoce.toc") do
     local chunk, err = loadfile(ROOT .. file:gsub("\\", "/"))
     if not chunk then error(err) end
     chunk("Negoce", ns)
+  end
+end
+
+-- Clés demandées en anglais sans traduction.
+local missing = {}
+do
+  local mt = getmetatable(ns.L)
+  local index = mt.__index
+  mt.__index = function(t, key)
+    if ns.lang == "en" and key ~= "" and ns.LOCALES.en[key] == nil then missing[key] = true end
+    return index(t, key)
   end
 end
 
@@ -429,6 +470,87 @@ for _, setup in ipairs({
   ok, err = pcall(function() ns.tabs.production.frame:Refresh() end)
   check("Production, " .. setup[1], ok, err)
 end
+-- Détail d'un produit fini et d'une matière première : clic sur leur nœud du graphe.
+ns.db.ui.prodSkill, ns.db.ui.prodSearch, ns.db.ui.prodKnown = 202, "", false
+ns.tabs.production.frame:Refresh()
+local clicked = { product = false, raw = false }
+for _, w in ipairs(eventFrames) do
+  local n = rawget(w, "node")
+  if n and w.scripts.OnClick and w.shown then
+    local kind = n.r and #n.uses == 0 and "product" or (not n.r and "raw") or nil
+    if kind and not clicked[kind] then
+      ok, err = pcall(w.scripts.OnClick, w)
+      check("Production, détail d'un " .. (kind == "product" and "produit fini" or "matière première"), ok, err)
+      clicked[kind] = true
+    end
+  end
+end
+check("Production, deux nœuds cliqués", clicked.product and clicked.raw)
+
+-- Bouton de l'HV, commandes
+local scanButton
+for _, w in ipairs(eventFrames) do local t = rawget(w, "text") if w.scripts.OnClick and type(t) == "string" and t:find("Négoce") then scanButton = w end end
+if scanButton and scanButton.scripts.OnEnter then scanButton.scripts.OnEnter(scanButton) end
+for _, cmd in ipairs({ "suivi", "aide", "erreurs", "taille 3", "langue xx" }) do
+  ok, err = pcall(SlashCmdList.NEGOCE, cmd)
+  check("commande /negoce " .. cmd, ok, err)
+end
+ok, err = pcall(SlashCmdList.NEGOCE, "tooltip")
+check("commande anglaise /negoce tooltip", ok and ns.db.ui.noTooltip == true, err)
+SlashCmdList.NEGOCE("infobulle")
+
+-- Choix de la langue : enregistré pour le compte, appliqué tout de suite.
+local before = ns.lang
+SlashCmdList.NEGOCE(before == "fr" and "language en" or "langue fr")
+check("choix de la langue enregistré", ns.px.lang ~= nil and ns.lang == ns.px.lang and ns.lang ~= before, ns.px.lang)
+SlashCmdList.NEGOCE("langue auto")
+check("retour à la langue du client", ns.px.lang == nil and ns.lang == before, ns.lang)
+
+if LOCALE == "enUS" then
+  check("langue choisie : anglais", ns.lang == "en", ns.lang)
+  -- Toutes les clés écrites dans le code (L["…"] et ns.Lf("…")) ont leur traduction.
+  local unescape = function(text) return load("return \"" .. text .. "\"")() end
+  for _, file in ipairs({ "Core.lua", "Prix.lua", "Stock.lua", "Flux.lua", "Positions.lua", "Revient.lua",
+    "Infobulle.lua", "Recettes.lua", "UI/Theme.lua", "UI/Chart.lua", "UI/Main.lua", "UI/Finances.lua", "UI/Production.lua" }) do
+    local src = io.open(ROOT .. file):read("a")
+    for key in src:gmatch('L%["(.-[^\\])"%]') do
+      if ns.LOCALES.en[unescape(key)] == nil then missing[unescape(key)] = true end
+    end
+    for key in src:gmatch('Lf%("(.-[^\\])"') do
+      if ns.LOCALES.en[unescape(key)] == nil then missing[unescape(key)] = true end
+    end
+  end
+  -- Les textes rangés dans des tables (catégories de l'or, mouvements d'objets, métiers).
+  for _, list in ipairs({ ns.CATEGORIES, ns.SOURCES, ns.DATA.metiers }) do
+    for _, text in pairs(list) do
+      if ns.LOCALES.en[text] == nil then missing[text] = true end
+    end
+  end
+  local list = {}
+  for key in pairs(missing) do list[#list + 1] = key end
+  table.sort(list)
+  check("aucun texte sans traduction anglaise", #list == 0, table.concat(list, " | "))
+
+  -- Rien de français à l'écran, hormis les noms d'objets du jeu (en français dans cet essai).
+  local names = { "Négoce" }
+  for _, it in pairs(ITEMS) do names[#names + 1] = it[1] end
+  local french = {}
+  for _, text in ipairs(shownTexts) do
+    local t = text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+    for _, name in ipairs(names) do t = t:gsub(name:gsub("%p", "%%%0"), "") end
+    t = t:gsub("Objet test %d+", "")
+    local accent = false
+    for _, c in ipairs({ "é", "è", "ê", "à", "â", "ù", "û", "ç", "ô", "î", "ï", "É", "È", "À" }) do
+      if t:find(c, 1, true) then accent = true end
+    end
+    if accent or t:find("«") or t:find("%f[%a]de%f[%A]") or t:find("%f[%a]sur%f[%A]")
+      or t:find("%f[%a]pour%f[%A]") or t:find("%f[%a]aucun") or t:find("%f[%a]il y a%f[%A]") then
+      french[#french + 1] = text
+    end
+  end
+  check("aucun texte français affiché en anglais", #french == 0, table.concat(french, " | "))
+end
+
 check("aucune erreur interne enregistrée", #ns.db.errors == 0, ns.db.errors[1] and (ns.db.errors[1].w .. " : " .. ns.db.errors[1].m))
 
 io.write(failures == 0 and "\nTout passe.\n" or ("\n" .. failures .. " échec(s).\n"))

@@ -1,6 +1,7 @@
 -- Négoce : fenêtre principale, onglets, bouton de la minicarte et commandes.
 local ADDON, ns = ...
 local UI = ns.UI
+local L = ns.L
 
 local WIDTH, HEIGHT, HEADER = 1100, 740, 62
 UI.CONTENT_W, UI.CONTENT_H = WIDTH, HEIGHT - HEADER
@@ -38,11 +39,11 @@ local function updateStatus()
   local market = ns.Market()
   local state, count = ns.ScanState()
   if state == "scan" then
-    win.status:SetText(UI.Hex("accent") .. "Scan en cours… " .. count .. " objets|r")
+    win.status:SetText(UI.Hex("accent") .. ns.Lf("Scan en cours… %d objets", count) .. "|r")
   elseif market.scan then
-    win.status:SetText("Prix de l'HV relevés " .. ns.Ago(market.scan))
+    win.status:SetText(ns.Lf("Prix de l'HV relevés %s", ns.Ago(market.scan)))
   else
-    win.status:SetText("Aucun scan de l'HV pour l'instant")
+    win.status:SetText(L["Aucun scan de l'HV pour l'instant"])
   end
 end
 
@@ -111,7 +112,7 @@ local function build()
 
   local entries = {}
   for _, key in ipairs(order) do
-    entries[#entries + 1] = { key = key, label = ns.tabs[key].label, w = 120 }
+    entries[#entries + 1] = { key = key, label = L[ns.tabs[key].label], w = 120 }
   end
   win.tabs = UI.Segment(header, entries, showTab, 120, 30)
   win.tabs:SetPoint("LEFT", 190, 0)
@@ -173,11 +174,11 @@ ns.AtLogin(function()
       local list = ns.db.wealth
       local last = list[#list]
       if last then
-        tt:AddDoubleLine("Or", ns.Money(last.g), 0.7, 0.7, 0.7, 1, 1, 1)
-        tt:AddDoubleLine("Stock", ns.Money(last.s), 0.7, 0.7, 0.7, 1, 1, 1)
-        tt:AddDoubleLine("Patrimoine", ns.Money(last.g + last.s + (last.m or 0)), 0.7, 0.7, 0.7, 1, 0.82, 0)
+        tt:AddDoubleLine(L["Or"], ns.Money(last.g), 0.7, 0.7, 0.7, 1, 1, 1)
+        tt:AddDoubleLine(L["Stock"], ns.Money(last.s), 0.7, 0.7, 0.7, 1, 1, 1)
+        tt:AddDoubleLine(L["Patrimoine"], ns.Money(last.g + last.s + (last.m or 0)), 0.7, 0.7, 0.7, 1, 0.82, 0)
       end
-      tt:AddLine("Clic : ouvrir ou fermer", 0.6, 0.6, 0.6)
+      tt:AddLine(L["Clic : ouvrir ou fermer"], 0.6, 0.6, 0.6)
     end,
   })
   icon:Register("Negoce", broker, ns.db.minimap)
@@ -187,39 +188,68 @@ end)
 -- Commandes
 ---------------------------------------------------------------------------
 
+-- Chaque commande a un nom français et un nom anglais.
+local COMMANDS = {
+  scan = "scan", erreurs = "erreurs", errors = "erreurs", minicarte = "minicarte", minimap = "minicarte",
+  taille = "taille", scale = "taille", suivi = "suivi", tracking = "suivi", infobulle = "infobulle",
+  tooltip = "infobulle", aide = "aide", help = "aide", langue = "langue", language = "langue", lang = "langue",
+}
+
+local function setLanguage(arg)
+  local pref
+  if arg == "fr" or arg == "francais" or arg == "français" or arg == "french" then
+    pref = "fr"
+  elseif arg == "en" or arg == "anglais" or arg == "english" then
+    pref = "en"
+  elseif arg == "auto" then
+    pref = nil
+  else
+    ns.Print(L["langue : /negoce langue fr, en ou auto (langue du jeu)"])
+    return
+  end
+  ns.px.lang = pref
+  ns.SetLanguage(pref)
+  -- La fenêtre déjà construite garde ses textes : on recharge l'interface pour tout reprendre.
+  if ReloadUI then ReloadUI() end
+end
+
 SLASH_NEGOCE1, SLASH_NEGOCE2 = "/negoce", "/ng"
 SlashCmdList["NEGOCE"] = function(msg)
   msg = (msg or ""):lower():match("^%s*(.-)%s*$")
-  if msg == "scan" then
+  local word, arg = msg:match("^(%S*)%s*(.-)$")
+  local cmd = COMMANDS[word]
+  if cmd == "scan" then
     ns.StartScan()
-  elseif msg == "erreurs" then
+  elseif cmd == "erreurs" then
     local errors = ns.db.errors
-    if #errors == 0 then ns.Print("aucune erreur enregistrée.") end
+    if #errors == 0 then ns.Print(L["aucune erreur enregistrée."]) end
     for i = math.max(1, #errors - 9), #errors do
       local e = errors[i]
-      ns.Print(date("%d/%m %H:%M", e.t) .. " [" .. e.w .. "] " .. e.m)
+      ns.Print(ns.Date(e.t, true) .. " [" .. e.w .. "] " .. e.m)
     end
-  elseif msg == "minicarte" then
+  elseif cmd == "minicarte" then
     local icon = LibStub and LibStub("LibDBIcon-1.0", true)
     ns.db.minimap.hide = not ns.db.minimap.hide
     if icon then
       if ns.db.minimap.hide then icon:Hide("Negoce") else icon:Show("Negoce") end
     end
-  elseif msg:match("^taille") then
-    local scale = tonumber(msg:match("([%d%.]+)"))
+  elseif cmd == "taille" then
+    local scale = tonumber(arg)
     if scale and scale >= 0.6 and scale <= 1.4 then
       ns.db.ui.scale = scale
       if win then win:SetScale(scale) end
     else
-      ns.Print("taille entre 0.6 et 1.4, par exemple : /negoce taille 0.9")
+      ns.Print(L["taille entre 0.6 et 1.4, par exemple : /negoce taille 0.9"])
     end
-  elseif msg == "suivi" then
+  elseif cmd == "suivi" then
     if ns.PrintTracking then ns.PrintTracking(15) end
-  elseif msg == "infobulle" then
+  elseif cmd == "infobulle" then
     ns.db.ui.noTooltip = not ns.db.ui.noTooltip or nil
-    ns.Print(ns.db.ui.noTooltip and "bloc Négoce masqué dans les infobulles." or "bloc Négoce affiché dans les infobulles.")
-  elseif msg == "aide" then
-    ns.Print("/negoce : ouvrir la fenêtre · scan · suivi · infobulle · taille 0.9 · minicarte · erreurs")
+    ns.Print(ns.db.ui.noTooltip and L["bloc Négoce masqué dans les infobulles."] or L["bloc Négoce affiché dans les infobulles."])
+  elseif cmd == "langue" then
+    setLanguage(arg)
+  elseif cmd == "aide" then
+    ns.Print(L["/negoce : ouvrir la fenêtre · scan · suivi · infobulle · taille 0.9 · minicarte · erreurs · langue en"])
   else
     ns.Toggle()
   end
