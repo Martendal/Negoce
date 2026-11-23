@@ -39,8 +39,9 @@ published .zip or copy these libraries from another addon.
 ## Releasing a version
 
 1. Set the same version number in `Negoce.toc` (`## Version`) and `Core.lua` (`ns.VERSION`).
-2. Commit, then tag and push: `git tag v1.2.0 && git push && git push origin v1.2.0`.
-3. The *Publier* GitHub action runs the offline test, builds the .zip and uploads it to
+2. Add a section for the version at the top of `CHANGELOG.md`: it is shown on CurseForge.
+3. Commit, then tag and push: `git tag v1.2.0 && git push && git push origin v1.2.0`.
+4. The *Publier* GitHub action runs the offline test, builds the .zip and uploads it to
    CurseForge.
 
 ## License

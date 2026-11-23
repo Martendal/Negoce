@@ -1,5 +1,10 @@
 package-as: Negoce
 
+# Journal des changements écrit à la main (en anglais), affiché sur CurseForge et GitHub.
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
+
 # Bibliothèques récupérées au moment de construire le .zip : elles ne sont pas dans le dépôt.
 externals:
   Libs/LibStub: https://repos.wowace.com/wow/libstub/trunk
