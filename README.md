@@ -37,3 +37,7 @@ le .zip publié ou copie ces bibliothèques depuis un autre addon.
 2. Commit, puis tag et push : `git tag v1.2.0 && git push && git push origin v1.2.0`.
 3. L'action GitHub *Publier* lance le test hors jeu, construit le .zip et l'envoie sur
    CurseForge.
+
+## Licence
+
+MIT, voir [LICENSE](LICENSE). Les bibliothèques ajoutées au .zip gardent leur propre licence.
