@@ -1,0 +1,9 @@
+# Bibliothèques : présentes en local pour jouer et tester, ajoutées au .zip par le packager
+# (voir .pkgmeta). On ne les republie pas dans le dépôt.
+Libs/
+
+# Construction locale du packager
+.release/
+
+.DS_Store
+__pycache__/

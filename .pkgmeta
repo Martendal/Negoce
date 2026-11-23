@@ -1,0 +1,13 @@
+package-as: Negoce
+
+# Bibliothèques récupérées au moment de construire le .zip : elles ne sont pas dans le dépôt.
+externals:
+  Libs/LibStub: https://repos.wowace.com/wow/libstub/trunk
+  Libs/CallbackHandler-1.0: https://repos.wowace.com/wow/callbackhandler/trunk/CallbackHandler-1.0
+  Libs/LibDataBroker-1.1: https://github.com/tekkub/libdatabroker-1-1
+  Libs/LibDBIcon-1.0: https://repos.wowace.com/wow/libdbicon-1-0/trunk/LibDBIcon-1.0
+
+# Fichiers du dépôt qui ne vont pas dans l'addon publié.
+ignore:
+  - outils
+  - README.md
